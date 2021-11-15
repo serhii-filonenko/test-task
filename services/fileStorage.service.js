@@ -8,7 +8,7 @@ class FileStorage {
 	async save(data) {
 		fs.writeFile(
 			__dirname + '/../result/result.json',
-			JSON.stringify(this.generateSchema(data)),
+			JSON.stringify(data),
 			(err) => {
 				if (err) {
 					this.notificationService.error(err);
@@ -16,11 +16,6 @@ class FileStorage {
 					this.notificationService.success('Schema is saved');
 				}
 			})
-	}
-
-	generateSchema(data) {
-		return Array.from(data.entries())
-			.map(([key, value]) => GenerateSchema.json(key, value));
 	}
 }
 

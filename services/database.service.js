@@ -1,5 +1,4 @@
 import cassandra from 'cassandra-driver';
-import { notification } from './index';
 import { nativeTypes, typeCode } from '../constants';
 
 class Database {
@@ -50,6 +49,7 @@ class Database {
 			await Promise.all(
 				tableColumns.rows.map(async (row) => {
 					let rowType = row.type;
+					let properties = null;
 
 					if (!nativeTypes.includes(typeCode[row.type])) {
 						const data = await this.client.execute(
@@ -58,17 +58,32 @@ class Database {
 								LIMIT 1
 							`
 						);
-						const { info } = data.columns[0].type;
+						const { code, type: { info } } = data.columns[0];
 
-						const propperties = info.fields.map(field => ({
-							[field.name]: Object.keys(typeCode).find(
-								key => typeCode[key] === field.type.code
-							),
+						if (!Array.isArray(info)) {
+							properties = info.fields.map(field => ({
+								[field.name]: {
+									type: Object.keys(typeCode).find(
+										key => typeCode[key] === field.type.code
+									),
+								}
+							}));
 
-						}));
+							properties = Object.assign(...properties);
+						} else {
+							properties = info.map(field => ({
+								type: Object.keys(typeCode).find(
+									key => typeCode[key] === field.code
+								),
+							}));
+						}
 
-						rowType = Object.assign(...propperties);
-
+						rowType = {
+							type: Object.keys(typeCode).find(
+								key => typeCode[key] === code
+							) || 'object',
+							properties: properties
+						};
 					}
 
 					if (tables.has(row.table_name)) {
@@ -83,7 +98,14 @@ class Database {
 					}
 				}));
 
-			await this.fileStorage.save(tables);
+			const data = Array.from(tables.entries())
+				.map(([title, properties]) => ({
+					"$schema": "http://json-schema.org/draft-04/schema#",
+					title,
+					properties,
+				}));
+
+			await this.fileStorage.save(data);
 
 
 		} catch (err) {
