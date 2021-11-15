@@ -1,5 +1,7 @@
 import cassandra from 'cassandra-driver';
 import { nativeTypes, typeCode } from '../constants';
+import { Database as DatabaseRepository } from '../repositories';
+import { getTypeFromCode } from '../helpers';
 
 class Database {
 	constructor({ notification, fileStorage, config }) {
@@ -7,6 +9,7 @@ class Database {
 		this.fileStorage = fileStorage;
 		this.config = config;
 		this.client = this._connect(this.config);
+		this.databaseRepository = new DatabaseRepository({ client: this.client });
 	}
 
 	_connect(config) {
@@ -36,55 +39,43 @@ class Database {
 
 	async getSchema() {
 		try {
-			const tableColumns = await this.client.execute(
-				`
-				SELECT * FROM system_schema.columns
-				WHERE keyspace_name =?
-				`,
-				[this.config.keyspace]
-			);
+			const tableColumns = await this.databaseRepository
+				.getAllTablesColumnsByKeyspace(this.config.keyspace);
 
 			const tables = new Map();
 
 			await Promise.all(
 				tableColumns.rows.map(async (row) => {
-					let rowType = row.type;
+					let rowType = {
+						type: getTypeFromCode(typeCode[row.type]),
+					};
 					let properties = null;
 
 					if (!nativeTypes.includes(typeCode[row.type])) {
-						const data = await this.client.execute(
-							`
-								SELECT ${row.column_name} FROM ${row.table_name}
-								LIMIT 1
-							`
-						);
+						const data = await this.databaseRepository
+							.getColumnFromTable(row.column_name, row.table_name, 1);
+
 						const { code, type: { info } } = data.columns[0];
 
 						if (!Array.isArray(info)) {
 							properties = info.fields.map(field => ({
 								[field.name]: {
-									type: Object.keys(typeCode).find(
-										key => typeCode[key] === field.type.code
-									),
+									type: getTypeFromCode(field.type.code),
 								}
 							}));
 
 							properties = Object.assign(...properties);
 						} else {
 							properties = info.map(field => ({
-								type: Object.keys(typeCode).find(
-									key => typeCode[key] === field.code
-								),
+								type: getTypeFromCode(field.code),
 							}));
 						}
 
 						rowType = {
-							type: Object.keys(typeCode).find(
-								key => typeCode[key] === code
-							) || 'object',
+							type: getTypeFromCode(code) || 'object',
 							properties: properties
 						};
-					}
+					} 
 
 					if (tables.has(row.table_name)) {
 						tables.set(row.table_name, {
@@ -107,7 +98,7 @@ class Database {
 
 			await this.fileStorage.save(data);
 
-
+			await this.client.shutdown();
 		} catch (err) {
 			this.notificationService.error(err);
 		}

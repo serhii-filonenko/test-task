@@ -1,5 +1,4 @@
 import fs from 'fs';
-import GenerateSchema from 'generate-schema';
 
 class FileStorage {
 	constructor({ notification }) {
