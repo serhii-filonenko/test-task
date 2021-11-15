@@ -1,0 +1,1 @@
+export { getTypeFromCode } from './getTypeFromCode';
