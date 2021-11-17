@@ -1,10 +1,8 @@
 import chalk from 'chalk';
 
 class Notification {
-	success(text = '') {
-		const textMessage = text || 'Connection success';
-
-		console.log(chalk.blueBright(textMessage));
+	success(message) {
+		console.log(chalk.blueBright(message));
 	}
 
 	error(error) {

@@ -7,7 +7,7 @@ class FileStorage {
 	async save(data) {
 		fs.writeFile(
 			__dirname + '/../result/result.json',
-			JSON.stringify(data),
+			data,
 			(err) => {
 				if (err) {
 					this.notificationService.error(err);

@@ -1,7 +1,7 @@
 import { typeCode } from "../constants"
 
 const getTypeFromCode = (code) => {
-	let type = null;
+	let type;
 
 	switch (code) {
 		case typeCode['ascii']:

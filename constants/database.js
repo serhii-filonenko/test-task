@@ -20,11 +20,12 @@ const typeCode = {
 	time: 18,
 	smallint: 19,
 	tinyint: 20,
-	list: 21,
-	map: 22,
-	set: 23,
-	udt: 24,
-	tuple: 25,
+	duration: 21,
+	list: 32,
+	map: 33,
+	set: 34,
+	udt: 48,
+	tuple: 49,
 };
 const nativeTypes = [
 	typeCode['ascii'],
