@@ -1,36 +1,28 @@
 import { Converter as ConverterService } from "../../services/converter.service";
 
-jest.mock('../../services/converter.service');
-
 describe('tests for ConverterService', () => {
-
+	let converterService;
 	const mockRepository = jest.fn();
+	const mockShema = [{ title: 'title', properties: 'properties' }];
 
 	beforeEach(() => {
-		ConverterService.mockClear();
-		ConverterService.mockImplementation(() => ({
-				databaseRepository: mockRepository,
-				databaseSchemaToJSONSchema: () => [],
-			}));
+		converterService = new ConverterService({ databaseRepository: mockRepository });
 	});
 
-	it('When init constructor', () => {
-		const converterService = new ConverterService();
-		const repository = Symbol();
+	it('When map tables', async () => {
+		const mockmapTableColumns = jest.spyOn(ConverterService.prototype, 'mapTableColumns')
 
-		converterService.databaseRepository(repository);
+		const data = await converterService.mapTableColumns([]);
 
-		expect(mockRepository).toHaveBeenCalledTimes(1);
-		expect(mockRepository.mock.calls[0][0]).toBe(repository);
-	})
-
-	it('When create schema return data', async () => {
-		const converterService = new ConverterService();
-		const spy = jest.spyOn(converterService, 'databaseSchemaToJSONSchema');
-		const data = await converterService.databaseSchemaToJSONSchema();
-
-		expect(spy).toHaveBeenCalledTimes(1);
+		expect(mockmapTableColumns).toHaveBeenCalledWith([]);
 		expect(data).toBeDefined();
-		expect(data).toEqual([]);
 	});
+
+		it('When return schema', async () => {
+			const mockToSchema = jest.spyOn(ConverterService.prototype, 'databaseSchemaToJSONSchema')
+			const data = await converterService.databaseSchemaToJSONSchema();
+
+			expect(mockToSchema).toHaveBeenCalledTimes(1);
+			expect(data).toEqual(JSON.stringify([]));
+		});
 });

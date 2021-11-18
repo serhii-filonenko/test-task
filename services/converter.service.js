@@ -8,10 +8,25 @@ class Converter {
 	}
 
 	async databaseSchemaToJSONSchema(tableColumns) {
+
+		const tables = await this.mapTableColumns(tableColumns);
+
+		const data = Array.from(tables.entries())
+			.map(([title, properties]) => ({
+				"$schema": "http://json-schema.org/draft-04/schema#",
+				title,
+				properties,
+			}));
+
+		return JSON.stringify(data);
+	}
+
+	async mapTableColumns(tableColumns) {
+		const rows = tableColumns && tableColumns.rows || [];
 		const tables = new Map();
 
 		await Promise.all(
-			tableColumns.rows.map(async (row) => {
+			rows.map(async (row) => {
 
 				let type = getTypeFromCode(typeCode[row.type]);
 				let properties = null;
@@ -55,14 +70,7 @@ class Converter {
 
 			}));
 
-			const data = Array.from(tables.entries())
-			.map(([title, properties]) => ({
-				"$schema": "http://json-schema.org/draft-04/schema#",
-				title,
-				properties,
-			}));
-
-		return JSON.stringify(data);
+		return tables;
 	}
 }
 
